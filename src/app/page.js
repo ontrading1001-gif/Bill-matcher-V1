@@ -1,7 +1,16 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+// 기본 탭 기능을 쓰기 위해 대치합니다.
+const Tabs = ({ children, defaultValue }) => {
+  const [v, setV] = React.useState(defaultValue);
+  return <div className="w-full">{React.Children.map(children, c => React.cloneElement(c, { activeValue: v, setActiveValue: setV }))}</div>;
+};
+const TabsList = ({ children, activeValue, setActiveValue, className }) => <div className={className}>{React.Children.map(children, c => React.cloneElement(c, { activeValue, setActiveValue }))}</div>;
+const TabsTrigger = ({ children, value, activeValue, setActiveValue, className }) => (
+  <button onClick={() => setActiveValue(value)} className={`${className} ${activeValue === value ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}>{children}</button>
+);
+const TabsContent = ({ children, value, activeValue, className }) => activeValue === value ? <div className={className}>{children}</div> : null;
 
 export default function Home() {
   // --- 1. 상태 관리 (State) ---
