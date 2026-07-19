@@ -70,11 +70,19 @@ export default function Home() {
 
   // --- 이벤트 핸들러 ---
   const handleFileUpload = (e) => {
-    alert("🧾 벤더 빌 파일이 선택되었습니다! (AI 데이터 추출 시뮬레이션 작동 완료)");
-  };
-
-  const handleExcelUpload = (e) => {
-    alert("📊 엑셀 파일이 업로드되었습니다! (아이템 대량 등록 시뮬레이션)");
+    // 새로운 시뮬레이션 데이터 추가
+    const newItem = { 
+      id: Date.now(), 
+      vendorItem: '신규 추출 품목: 냉동 새우 2kg', 
+      quantity: 5, 
+      unit: 'PK', 
+      matchedCode: '', 
+      multiplier: 1, 
+      status: '매칭 대기' 
+    };
+    
+    setExtractedItems([...extractedItems, newItem]);
+    alert("🧾 벤더 빌 파일이 선택되었습니다! (AI 데이터 추출 시뮬레이션 결과가 목록에 추가되었습니다.)");
   };
 
   return (
