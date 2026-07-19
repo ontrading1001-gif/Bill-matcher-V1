@@ -68,18 +68,37 @@ export default function Home() {
     loadDatabaseData();
   }, [supabaseClient]);
 
-// 수정된 handleFileUpload 함수
-  const handleFileUpload = (e) => {
-    // 실제 파일에서 데이터를 추출하는 과정이라고 가정합니다
-    const extractedData = [
-      { id: Date.now(), vendorItem: '아산유통 냉동 새우 2kg', quantity: 5, unit: 'PK', matchedCode: '', multiplier: 1, status: '매칭 대기' },
-      { id: Date.now() + 1, vendorItem: '아산유통 신선 양파 10kg', quantity: 3, unit: 'BAG', matchedCode: '', multiplier: 1, status: '매칭 대기' }
-    ];
+// --- 실제 API를 호출하는 수정된 handleFileUpload 함수 ---
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
 
-    // 기존 리스트에 추출된 항목들을 병합합니다
-    setExtractedItems([...extractedItems, ...extractedData]);
-    
-    alert("🧾 빌 파일에서 품목이 성공적으로 추출되어 리스트에 추가되었습니다!");
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      // 위에서 만든 API 경로로 파일 전송
+      const response = await fetch('/api/extract', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (data.items) {
+        // AI가 분석해서 보내준 데이터를 상태에 업데이트
+        setExtractedItems(prev => [...prev, ...data.items.map(item => ({
+          ...item,
+          id: Date.now(),
+          matchedCode: '',
+          multiplier: 1,
+          status: '매칭 대기'
+        }))]);
+        alert("🧾 AI 빌 분석이 완료되었습니다!");
+      }
+    } catch (error) {
+      alert("분석 중 오류가 발생했습니다. 다시 시도해주세요.");
+    }
   };
 
   return (
