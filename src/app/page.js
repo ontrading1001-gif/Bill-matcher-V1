@@ -1,269 +1,229 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
-export default function Home() {
-  // --- 상태 관리 (State) ---
-  const [activeTab, setActiveTab] = useState('tab1');
-  const [qbItems, setQbItems] = useState([
-    { code: 'QB001', description: '고추장 10kg', unit: 'BOX' },
-    { code: 'QB002', description: '참기름 1L', unit: 'BTL' },
-    { code: 'QB003', description: '냉동 낙지 1kg', unit: 'PK' },
-    { code: 'QB004', description: '국산 쌀 20kg', unit: 'BAG' },
-    { code: 'QB005', description: '식용유 18L', unit: 'CAN' }
-  ]);
+// Vercel 환경 변수에서 주소와 API 키를 안전하게 가져옵니다.
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  const [vendors, setVendors] = useState([
-    { id: 1, name: '아산유통', alias: '아산식품, (주)아산' }
-  ]);
+export default function VendorMatcher() {
+  const [activeTab, setActiveTab] = useState('matching');
+  const [vendorInput, setVendorInput] = useState('');
+  const [selectedItem, setSelectedItem] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  
+  // 상태 관리 (DB 연동)
+  const [savedMatches, setSavedMatches] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const [extractedItems, setExtractedItems] = useState([
-    { id: 1, vendorItem: '아산유통고추장 대 용량', quantity: 2, unit: 'BOX', matchedCode: 'QB001', multiplier: 1, status: '학습 완료' },
-    { id: 2, vendorItem: '아산유통참기름 오일', quantity: 12, unit: 'EA', matchedCode: '', multiplier: 1, status: '매칭 대기' }
-  ]);
-
-  const [newVendorName, setNewVendorName] = useState('');
-  const [newVendorAlias, setNewVendorAlias] = useState('');
-  const [newQbCode, setNewQbCode] = useState('');
-  const [newQbDesc, setNewQbDesc] = useState('');
-  const [newQbUnit, setNewQbUnit] = useState('BOX');
-
-  // --- 이벤트 핸들러 ---
-  const handleFileUpload = (e) => {
-    alert("🧾 벤더 빌 파일이 선택되었습니다! (AI 데이터 추출 시뮬레이션 작동 완료)");
+  // 1. Supabase에서 저장된 매칭 데이터 실시간 불러오기
+  const fetchMatches = async () => {
+    if (!SUPABASE_URL || !SUPABASE_KEY) return;
+    setIsLoading(true);
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/vendor_matches?select=*&order=created_at.desc`, {
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`
+        }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setSavedMatches(data);
+      }
+    } catch (err) {
+      console.error("데이터 로드 실패:", err);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleExcelUpload = (e) => {
-    alert("📊 엑셀 파일이 업로드되었습니다! (아이템 대량 등록 시뮬레이션)");
+  useEffect(() => {
+    fetchMatches();
+  }, []);
+
+  // 2. Supabase 데이터베이스에 새 매칭 데이터 저장하기
+  const handleSaveMatch = async () => {
+    if (!vendorInput || !selectedItem) {
+      alert('벤더 이름과 QuickBooks 아이템을 모두 선택해주세요.');
+      return;
+    }
+
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/vendor_matches`, {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation'
+        },
+        body: JSON.stringify({
+          vendor_name: vendorInput,
+          quickbooks_item: selectedItem,
+          confidence_score: Math.floor(Math.random() * 15) + 85 // 85~99% 사이 랜덤 매칭율 시뮬레이션
+        })
+      });
+
+      if (res.ok) {
+        alert('데이터베이스에 안전하게 저장되었습니다!');
+        setVendorInput('');
+        setSelectedItem('');
+        fetchMatches(); // 목록 새로고침
+      } else {
+        alert('저장에 실패했습니다.');
+      }
+    } catch (err) {
+      console.error("데이터 저장 실패:", err);
+    }
   };
+
+  // 퀵북 아이템 후보 리스트
+  const quickBooksItems = [
+    'Food Costs: Meat & Poultry',
+    'Food Costs: Seafood',
+    'Food Costs: Produce',
+    'Beverage Costs: Soft Drinks',
+    'Operating Supplies: Kitchen Ware',
+    'Operating Supplies: Eco Packaging',
+    'Facility Cost: Waste Management'
+  ];
+
+  const filteredMatches = savedMatches.filter(match => 
+    match.vendor_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    match.quickbooks_item.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#f8fafc', color: '#334155', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif', padding: '40px 20px' }}>
-      <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
-        
-        {/* 스타일 시트 주입 (Tailwind 미작동 대비 완벽한 CSS 보장) */}
-        <style>{`
-          .app-card { bg-color: #ffffff; border-radius: 16px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05); border: 1px solid #f1f5f9; padding: 28px; background: white; }
-          .tab-btn { padding: 10px 20px; font-size: 14px; font-weight: 500; border: none; border-radius: 8px; background: transparent; color: #64748b; cursor: pointer; transition: all 0.2s; }
-          .tab-btn.active { background: #ffffff; color: #2563eb; font-weight: 600; box-shadow: 0 1px 3px rgb(0 0 0 / 0.1); }
-          .upload-box { border: 2px dashed #cbd5e1; background: #f8fafc; border-radius: 12px; padding: 40px 20px; text-align: center; cursor: pointer; position: relative; transition: all 0.2s; }
-          .upload-box:hover { background: #f1f5f9; border-color: #94a3b8; }
-          .btn-primary { background: #2563eb; color: white; border: none; padding: 10px 18px; font-size: 13px; font-weight: 500; border-radius: 8px; cursor: pointer; transition: background 0.2s; }
-          .btn-primary:hover { background: #1d4ed8; }
-          .btn-dark { background: #0f172a; color: white; border: none; padding: 12px 20px; font-size: 14px; font-weight: 500; border-radius: 8px; cursor: pointer; width: 100%; transition: background 0.2s; }
-          .btn-dark:hover { background: #1e293b; }
-          .table-style { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
-          .table-style th { background: #f8fafc; padding: 14px; font-weight: 600; color: #64748b; font-size: 12px; text-transform: uppercase; border-bottom: 1px solid #edf2f7; }
-          .table-style td { padding: 16px; border-bottom: 1px solid #f1f5f9; color: #334155; }
-          .input-style { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; background: #f8fafc; font-size: 14px; transition: border 0.2s; outline: none; }
-          .input-style:focus { border-color: #2563eb; background: #fff; }
-          .status-badge { color: #10b981; font-weight: 500; font-size: 13px; display: inline-flex; align-items: center; gap: 4px; }
-        `}</style>
-
-        {/* 대시보드 타이틀 헤더 */}
-        <header style={{ marginBottom: '32px' }}>
-          <h1 style={{ fontSize: '32px', fontWeight: '800', color: '#0f172a', letterSpacing: '-0.025em', margin: '0 0 6px 0' }}>QuickBooks Matcher</h1>
-          <p style={{ color: '#64748b', fontSize: '14px', margin: 0 }}>벤더 빌 매칭 및 단위 변환 자동 학습 시스템</p>
-        </header>
-
-        {/* 클로드 스타일 네비게이션 탭 바 */}
-        <div style={{ background: '#e2e8f0', padding: '6px', borderRadius: '12px', display: 'inline-flex', gap: '4px', marginBottom: '24px' }}>
-          <button onClick={() => setActiveTab('tab1')} className={`tab-btn ${activeTab === 'tab1' ? 'active' : ''}`}>1. 빌 매칭 검토</button>
-          <button onClick={() => setActiveTab('tab2')} className={`tab-btn ${activeTab === 'tab2' ? 'active' : ''}`}>2. 벤더 등록</button>
-          <button onClick={() => setActiveTab('tab3')} className={`tab-btn ${activeTab === 'tab3' ? 'active' : ''}`}>3. 벤더 명칭 관리</button>
-          <button onClick={() => setActiveTab('tab4')} className={`tab-btn ${activeTab === 'tab4' ? 'active' : ''}`}>4. 퀵북 아이템 관리</button>
+    <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto', fontFamily: 'system-ui, sans-serif', color: '#1f2937' }}>
+      {/* 상단 헤더 */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px', borderBottom: '1px solid #e5e7eb', paddingBottom: '16px' }}>
+        <div>
+          <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#111827', margin: 0 }}>QuickBooks Matcher Pro</h1>
+          <p style={{ fontSize: '14px', color: '#6b7280', marginTop: '4px' }}>실시간 클라우드 공유형 벤더 매칭 시스템</p>
         </div>
-
-        {/* 메인 콘텐츠 카드 */}
-        <div className="app-card">
-          
-          {/* TAB 1: 빌 매칭 검토 */}
-          {activeTab === 'tab1' && (
-            <div>
-              <h2 style={{ fontSize: '18px', fontWeight: '700', color: '#0f172a', marginBottom: '14px' }}>벤더 빌 파일 업로드</h2>
-              <div className="upload-box">
-                <input type="file" onChange={handleFileUpload} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }} accept="image/*,.pdf" />
-                <div style={{ fontSize: '15px', fontWeight: '500', color: '#475569' }}>영수증, 벤더 빌 이미지 또는 PDF 파일을 여기에 드래그하거나 클릭하세요</div>
-                <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '6px' }}>현재 시뮬레이션용 데이터 2건이 아래에 로드되어 있습니다.</div>
-              </div>
-
-              <h2 style={{ fontSize: '18px', fontWeight: '700', color: '#0f172a', marginTop: '40px', marginBottom: '4px' }}>추출 데이터 및 퀵북 매칭 검토</h2>
-              <p style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '20px' }}>단위가 다를 경우 배수를 입력하여 퀵북 기준 수량으로 환산하세요.</p>
-              
-              <div style={{ overflowX: 'auto', border: '1px solid #e2e8f0', borderRadius: '12px' }}>
-                <table className="table-style">
-                  <thead>
-                    <tr>
-                      <th>벤더 / 빌 품목명</th>
-                      <th>빌 수량 / 단위</th>
-                      <th>퀵북 아이템 매칭 (설명/코드)</th>
-                      <th style={{ width: '120px' }}>단위 변환 배수</th>
-                      <th>최종 퀵북 수량</th>
-                      <th>상태 및 저장</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {extractedItems.map((item) => (
-                      <tr key={item.id}>
-                        <td style={{ fontWeight: '600', color: '#1e293b' }}>{item.vendorItem}</td>
-                        <td style={{ color: '#475569' }}>{item.quantity} {item.unit}</td>
-                        <td>
-                          <select value={item.matchedCode} onChange={(e) => {
-                            const updated = extractedItems.map(i => i.id === item.id ? { ...i, matchedCode: e.target.value } : i);
-                            setExtractedItems(updated);
-                          }} style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px', width: '100%', background: '#f8fafc' }}>
-                            <option value="">-- 퀵북 아이템 선택 --</option>
-                            {qbItems.map(qb => (
-                              <option key={qb.code} value={qb.code}>{qb.description} ({qb.code}) [{qb.unit}]</option>
-                            ))}
-                          </select>
-                        </td>
-                        <td>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <span style={{ color: '#94a3b8', fontSize: '13px' }}>x</span>
-                            <input type="number" value={item.multiplier} onChange={(e) => {
-                              const updated = extractedItems.map(i => i.id === item.id ? { ...i, multiplier: Number(e.target.value) } : i);
-                              setExtractedItems(updated);
-                            }} style={{ width: '60px', padding: '6px', textAlign: 'center', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px' }} />
-                          </div>
-                        </td>
-                        <td style={{ fontWeight: '700', color: '#334155' }}>
-                          {item.quantity * item.multiplier} {qbItems.find(q => q.code === item.matchedCode)?.unit || item.unit}
-                        </td>
-                        <td>
-                          {item.status === '학습 완료' ? (
-                            <span className="status-badge">✓ 학습 완료</span>
-                          ) : (
-                            <button onClick={() => {
-                              const updated = extractedItems.map(i => i.id === item.id ? { ...i, status: '학습 완료' } : i);
-                              setExtractedItems(updated);
-                              alert("매칭 규칙이 성공적으로 시스템에 저장 및 학습되었습니다.");
-                            }} className="btn-primary">매칭 학습 저장</button>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-          {/* TAB 2: 벤더 등록 */}
-          {activeTab === 'tab2' && (
-            <div style={{ maxWidth: '460px' }}>
-              <h2 style={{ fontSize: '18px', fontWeight: '700', color: '#0f172a', marginBottom: '20px' }}>신규 신뢰 벤더 등록</h2>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#64748b', marginBottom: '6px' }}>벤더 정식 명칭</label>
-                  <input type="text" placeholder="예: 아산유통" value={newVendorName} onChange={(e) => setNewVendorName(e.target.value)} className="input-style" />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#64748b', marginBottom: '6px' }}>인식 대치 에일리어스 (쉼표로 구분)</label>
-                  <input type="text" placeholder="예: 아산식품, (주)아산" value={newVendorAlias} onChange={(e) => setNewVendorAlias(e.target.value)} className="input-style" />
-                </div>
-                <button onClick={() => {
-                  if(!newVendorName) return;
-                  setVendors([...vendors, { id: Date.now(), name: newVendorName, alias: newVendorAlias }]);
-                  setNewVendorName(''); setNewVendorAlias('');
-                  alert("✅ 새로운 벤더가 정상 등록되었습니다.");
-                }} className="btn-dark" style={{ marginTop: '8px' }}>벤더 등록하기</button>
-              </div>
-            </div>
-          )}
-
-          {/* TAB 3: 벤더 명칭 관리 */}
-          {activeTab === 'tab3' && (
-            <div>
-              <h2 style={{ fontSize: '18px', fontWeight: '700', color: '#0f172a', marginBottom: '16px' }}>벤더별 텍스트 별칭 (Alias) 매핑 리스트</h2>
-              <div style={{ overflowX: 'auto', border: '1px solid #e2e8f0', borderRadius: '12px' }}>
-                <table className="table-style">
-                  <thead>
-                    <tr>
-                      <th>정식 벤더명</th>
-                      <th>등록된 별칭들 (AI가 동일 회사로 동기화하는 명칭)</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {vendors.map((v) => (
-                      <tr key={v.id}>
-                        <td style={{ fontWeight: '600', color: '#0f172a' }}>{v.name}</td>
-                        <td style={{ color: '#475569' }}>{v.alias}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-          {/* TAB 4: 퀵북 아이템 관리 */}
-          {activeTab === 'tab4' && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '40px' }}>
-              
-              {/* 왼쪽 입력 폼 */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                <div>
-                  <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#0f172a', marginBottom: '14px' }}>직접 단건 추가</h3>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    <input type="text" placeholder="아이템 코드 (예: QB006)" value={newQbCode} onChange={(e) => setNewQbCode(e.target.value)} className="input-style" />
-                    <input type="text" placeholder="아이템 설명(명칭)" value={newQbDesc} onChange={(e) => setNewQbDesc(e.target.value)} className="input-style" />
-                    <select value={newQbUnit} onChange={(e) => setNewQbUnit(e.target.value)} style={{ padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px', background: '#f8fafc' }}>
-                      <option value="BOX">BOX</option>
-                      <option value="BTL">BTL (병)</option>
-                      <option value="PK">PK (팩)</option>
-                      <option value="BAG">BAG (포대)</option>
-                      <option value="CAN">CAN (캔)</option>
-                    </select>
-                    <button onClick={() => {
-                      if(!newQbCode || !newQbDesc) return;
-                      setQbItems([...qbItems, { code: newQbCode, description: newQbDesc, unit: newQbUnit }]);
-                      setNewQbCode(''); setNewQbDesc('');
-                      alert("📦 퀵북 아이템이 마스터 목록에 추가되었습니다.");
-                    }} className="btn-dark">아이템 추가</button>
-                  </div>
-                </div>
-
-                <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '20px' }}>
-                  <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#0f172a', marginBottom: '6px' }}>대량 엑셀 업로드 (.xlsx / .csv)</h3>
-                  <p style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '12px' }}>퀵북 아이템 리스트 파일을 드롭하여 일괄 등록합니다.</p>
-                  <div className="upload-box" style={{ padding: '24px 12px' }}>
-                    <input type="file" onChange={handleExcelUpload} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }} accept=".xlsx,.csv" />
-                    <span style={{ fontSize: '12px', color: '#64748b', fontWeight: '500' }}>📄 여기에 엑셀 파일을 드롭하세요</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* 오른쪽 아이템 리스트 */}
-              <div>
-                <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#0f172a', marginBottom: '14px' }}>퀵북 마스터 아이템 목록 ({qbItems.length}건)</h3>
-                <div style={{ overflowX: 'auto', border: '1px solid #e2e8f0', borderRadius: '12px', maxHeight: '420px', overflowY: 'auto' }}>
-                  <table className="table-style">
-                    <thead>
-                      <tr>
-                        <th style={{ position: 'sticky', top: 0, background: '#f8fafc' }}>코드</th>
-                        <th style={{ position: 'sticky', top: 0, background: '#f8fafc' }}>아이템 설명</th>
-                        <th style={{ position: 'sticky', top: 0, background: '#f8fafc' }}>기준 단위</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {qbItems.map((qb, index) => (
-                        <tr key={index}>
-                          <td style={{ fontFamily: 'monospace', fontWeight: '700', color: '#0f172a' }}>{qb.code}</td>
-                          <td>{qb.description}</td>
-                          <td><span style={{ background: '#eff6ff', color: '#1d4ed8', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: '700' }}>{qb.unit}</span></td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-            </div>
-          )}
-
+        <div style={{ display: 'flex', gap: '8px', background: '#f3f4f6', padding: '4px', borderRadius: '8px' }}>
+          <button 
+            onClick={() => setActiveTab('matching')}
+            style={{ padding: '8px 16px', border: 'none', borderRadius: '6px', fontSize: '14px', fontWeight: '500', cursor: 'pointer', background: activeTab === 'matching' ? '#ffffff' : 'transparent', color: activeTab === 'matching' ? '#111827' : '#4b5563', boxShadow: activeTab === 'matching' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', transition: 'all 0.2s' }}
+          >
+            매칭 학습
+          </button>
+          <button 
+            onClick={() => setActiveTab('database')}
+            style={{ padding: '8px 16px', border: 'none', borderRadius: '6px', fontSize: '14px', fontWeight: '500', cursor: 'pointer', background: activeTab === 'database' ? '#ffffff' : 'transparent', color: activeTab === 'database' ? '#111827' : '#4b5563', boxShadow: activeTab === 'database' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', transition: 'all 0.2s' }}
+          >
+            통합 데이터베이스 ({savedMatches.length})
+          </button>
         </div>
       </div>
+
+      {/* 탭 1: 매칭 학습 대시보드 */}
+      {activeTab === 'matching' && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+          {/* 입력 패널 */}
+          <div style={{ background: '#ffffff', padding: '24px', borderRadius: '12px', border: '1px solid #e5e7eb', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+            <h2 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '20px', color: '#111827' }}>매칭 관계 정의</h2>
+            
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', marginBottom: '6px', color: '#374151' }}>세금계산서상 벤더명 (인보이스 공급자명)</label>
+              <input 
+                type="text" 
+                placeholder="예: (주)한울푸드, US Foods Inc." 
+                value={vendorInput}
+                onChange={(e) => setVendorInput(e.target.value)}
+                style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }}
+              />
+            </div>
+
+            <div style={{ marginBottom: '24px' }}>
+              <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', marginBottom: '6px', color: '#374151' }}>QuickBooks 연결 대상 계정 아이템 (Mapping Item)</label>
+              <select 
+                value={selectedItem}
+                onChange={(e) => setSelectedItem(e.target.value)}
+                style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', background: '#fff', outline: 'none' }}
+              >
+                <option value="">-- 매칭할 퀵북 매핑 아이템 선택 --</option>
+                {quickBooksItems.map((item, idx) => (
+                  <option key={idx} value={item}>{item}</option>
+                ))}
+              </select>
+            </div>
+
+            <button 
+              onClick={handleSaveMatch}
+              style={{ width: '100%', padding: '12px', background: '#2563eb', color: '#ffffff', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', transition: 'background 0.2s' }}
+            >
+              클라우드 데이터베이스에 매칭 저장하기
+            </button>
+          </div>
+
+          {/* 실시간 프리뷰 및 안내 패널 */}
+          <div style={{ background: '#f9fafb', padding: '24px', borderRadius: '12px', border: '1px solid #e5e7eb', display: 'flex', flexDirection: 'col', justifyContent: 'center' }}>
+            <div style={{ textAlign: 'center', padding: '32px' }}>
+              <div style={{ display: 'inline-block', padding: '12px', background: '#dbeafe', borderRadius: '50%', marginBottom: '16px' }}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+              </div>
+              <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#111827', marginBottom: '8px' }}>다중 사용자 데이터 실시간 동기화</h3>
+              <p style={{ fontSize: '14px', color: '#6b7280', lineHeight: '1.5', margin: 0 }}>
+                여기서 등록한 규칙은 Supabase 클라우드로 영구 저장되어,<br />
+                다른 컴퓨터나 브라우저에서 접속한 팀원도 즉시 똑같이 조회하고 활용할 수 있습니다.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 탭 2: 통합 데이터베이스 리스트 */}
+      {activeTab === 'database' && (
+        <div style={{ background: '#ffffff', padding: '24px', borderRadius: '12px', border: '1px solid #e5e7eb', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <h2 style={{ fontSize: '18px', fontWeight: '600', color: '#111827', margin: 0 }}>전체 동기화 데이터 목록</h2>
+            <input 
+              type="text" 
+              placeholder="벤더명 또는 아이템 검색..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{ padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', width: '260px' }}
+            />
+          </div>
+
+          {isLoading ? (
+            <div style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>서버에서 데이터를 안전하게 불러오는 중...</div>
+          ) : filteredMatches.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '40px', color: '#6b7280', border: '1px dashed #e5e7eb', borderRadius: '8px' }}>저장된 매칭 데이터가 없습니다. 먼저 매칭을 등록해 주세요.</div>
+          ) : (
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+              <thead>
+                <tr style={{ borderBottom: '2px solid #f3f4f6' }}>
+                  <th style={{ padding: '12px', fontSize: '13px', color: '#4b5563', fontWeight: '600' }}>ID</th>
+                  <th style={{ padding: '12px', fontSize: '13px', color: '#4b5563', fontWeight: '600' }}>인보이스 벤더명 (Vendor)</th>
+                  <th style={{ padding: '12px', fontSize: '13px', color: '#4b5563', fontWeight: '600' }}>퀵북 매핑 항목 (QuickBooks Item)</th>
+                  <th style={{ padding: '12px', fontSize: '13px', color: '#4b5563', fontWeight: '600' }}>매칭 신뢰도</th>
+                  <th style={{ padding: '12px', fontSize: '13px', color: '#4b5563', fontWeight: '600' }}>저장 일시</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredMatches.map((match) => (
+                  <tr key={match.id} style={{ borderBottom: '1px solid #f3f4f6', hover: { background: '#f9fafb' } }}>
+                    <td style={{ padding: '12px', fontSize: '14px', color: '#9ca3af' }}>#{match.id}</td>
+                    <td style={{ padding: '12px', fontSize: '14px', fontWeight: '600', color: '#111827' }}>{match.vendor_name}</td>
+                    <td style={{ padding: '12px', fontSize: '14px', color: '#2563eb', fontWeight: '500' }}>{match.quickbooks_item}</td>
+                    <td style={{ padding: '12px', fontSize: '14px' }}>
+                      <span style={{ background: '#dcfce7', color: '#15803d', padding: '2px 8px', borderRadius: '12px', fontSize: '12px', fontWeight: '600' }}>
+                        {match.confidence_score}%
+                      </span>
+                    </td>
+                    <td style={{ padding: '12px', fontSize: '13px', color: '#6b7280' }}>
+                      {new Date(match.created_at).toLocaleString()}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
     </div>
   );
 }
