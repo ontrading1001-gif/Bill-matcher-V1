@@ -100,6 +100,16 @@ export default function Home() {
       alert("분석 중 오류가 발생했습니다. 다시 시도해주세요.");
     }
   };
+  // --- 엑셀/CSV 파일 처리 함수 ---
+  const handleExcelUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // 간단한 파일 업로드 피드백 (실제 파싱은 향후 추가 예정)
+    alert(`파일이 선택되었습니다: ${file.name}\n현재는 시뮬레이션 중이므로 실제 엑셀 파싱 로직을 연결할 준비가 되었습니다.`);
+    
+    // 이후 여기에 엑셀 데이터를 읽어서 setQbItems로 상태를 업데이트하는 로직을 넣으시면 됩니다.
+  };
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f8fafc', color: '#334155', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif', padding: '40px 20px' }}>
