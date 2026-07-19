@@ -2,25 +2,15 @@
 
 import React, { useState } from 'react';
 
-// 기본 탭 기능을 구현하기 위한 커스텀 컴포넌트
-const Tabs = ({ children, defaultValue }) => {
-  const [v, setV] = useState(defaultValue);
-  return <div className="w-full bg-white rounded-xl shadow-sm border border-slate-100 p-6">{React.Children.map(children, c => React.cloneElement(c, { activeValue: v, setActiveValue: setV }))}</div>;
-};
-const TabsList = ({ children, activeValue, setActiveValue }) => (
-  <div className="flex space-x-2 bg-slate-100 p-1.5 rounded-xl mb-6 w-max">{React.Children.map(children, c => React.cloneElement(c, { activeValue, setActiveValue }))}</div>
-);
-const TabsTrigger = ({ children, value, activeValue, setActiveValue }) => (
-  <button onClick={() => setActiveValue(value)} className={`px-4 py-2 text-sm font-medium rounded-lg transition-all ${activeValue === value ? 'bg-white text-blue-600 shadow-sm font-semibold' : 'text-slate-600 hover:text-slate-900'}`}>{children}</button>
-);
-const TabsContent = ({ children, value, activeValue }) => activeValue === value ? <div className="animate-fadeIn">{children}</div> : null;
-
 export default function Home() {
-  // --- 1. 상태 관리 (State) ---
+  // --- 상태 관리 (State) ---
+  const [activeTab, setActiveTab] = useState('tab1');
   const [qbItems, setQbItems] = useState([
     { code: 'QB001', description: '고추장 10kg', unit: 'BOX' },
     { code: 'QB002', description: '참기름 1L', unit: 'BTL' },
-    { code: 'QB003', description: '냉동 낙지 1kg', unit: 'PK' }
+    { code: 'QB003', description: '냉동 낙지 1kg', unit: 'PK' },
+    { code: 'QB004', description: '국산 쌀 20kg', unit: 'BAG' },
+    { code: 'QB005', description: '식용유 18L', unit: 'CAN' }
   ]);
 
   const [vendors, setVendors] = useState([
@@ -32,123 +22,123 @@ export default function Home() {
     { id: 2, vendorItem: '아산유통참기름 오일', quantity: 12, unit: 'EA', matchedCode: '', multiplier: 1, status: '매칭 대기' }
   ]);
 
-  // 새로운 데이터 입력 창을 위한 상태
   const [newVendorName, setNewVendorName] = useState('');
   const [newVendorAlias, setNewVendorAlias] = useState('');
   const [newQbCode, setNewQbCode] = useState('');
   const [newQbDesc, setNewQbDesc] = useState('');
   const [newQbUnit, setNewQbUnit] = useState('BOX');
 
-  // --- 2. 핸들러 함수들 ---
+  // --- 이벤트 핸들러 ---
   const handleFileUpload = (e) => {
-    alert("파일이 선택되었습니다! (AI 데이터 추출 시뮬레이션 작동)");
+    alert("🧾 벤더 빌 파일이 선택되었습니다! (AI 데이터 추출 시뮬레이션 작동 완료)");
   };
 
   const handleExcelUpload = (e) => {
-    alert("엑셀 파일이 업로드되었습니다! (아이템 대량 등록 시뮬레이션)");
-  };
-
-  const addVendor = (e) => {
-    e.preventDefault();
-    if (!newVendorName) return;
-    setVendors([...vendors, { id: Date.now(), name: newVendorName, alias: newVendorAlias }]);
-    setNewVendorName('');
-    setNewVendorAlias('');
-    alert("벤더가 등록되었습니다!");
-  };
-
-  const addQbItem = (e) => {
-    e.preventDefault();
-    if (!newQbCode || !newQbDesc) return;
-    setQbItems([...qbItems, { code: newQbCode, description: newQbDesc, unit: newQbUnit }]);
-    setNewQbCode('');
-    setNewQbDesc('');
-    alert("퀵북 아이템이 추가되었습니다!");
+    alert("📊 엑셀 파일이 업로드되었습니다! (아이템 대량 등록 시뮬레이션)");
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 font-sans p-6 sm:p-12">
-      <div className="max-w-6xl mx-auto">
+    <div style={{ minHeight: '100vh', backgroundColor: '#f8fafc', color: '#334155', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif', padding: '40px 20px' }}>
+      <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
         
-        {/* 헤더 섹션 */}
-        <header className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">QuickBooks Matcher</h1>
-          <p className="text-slate-500 mt-2 text-sm">벤더 빌 매칭 및 단위 변환 자동 학습 시스템</p>
+        {/* 스타일 시트 주입 (Tailwind 미작동 대비 완벽한 CSS 보장) */}
+        <style>{`
+          .app-card { bg-color: #ffffff; border-radius: 16px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05); border: 1px solid #f1f5f9; padding: 28px; background: white; }
+          .tab-btn { padding: 10px 20px; font-size: 14px; font-weight: 500; border: none; border-radius: 8px; background: transparent; color: #64748b; cursor: pointer; transition: all 0.2s; }
+          .tab-btn.active { background: #ffffff; color: #2563eb; font-weight: 600; box-shadow: 0 1px 3px rgb(0 0 0 / 0.1); }
+          .upload-box { border: 2px dashed #cbd5e1; background: #f8fafc; border-radius: 12px; padding: 40px 20px; text-align: center; cursor: pointer; position: relative; transition: all 0.2s; }
+          .upload-box:hover { background: #f1f5f9; border-color: #94a3b8; }
+          .btn-primary { background: #2563eb; color: white; border: none; padding: 10px 18px; font-size: 13px; font-weight: 500; border-radius: 8px; cursor: pointer; transition: background 0.2s; }
+          .btn-primary:hover { background: #1d4ed8; }
+          .btn-dark { background: #0f172a; color: white; border: none; padding: 12px 20px; font-size: 14px; font-weight: 500; border-radius: 8px; cursor: pointer; width: 100%; transition: background 0.2s; }
+          .btn-dark:hover { background: #1e293b; }
+          .table-style { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
+          .table-style th { background: #f8fafc; padding: 14px; font-weight: 600; color: #64748b; font-size: 12px; text-transform: uppercase; border-bottom: 1px solid #edf2f7; }
+          .table-style td { padding: 16px; border-bottom: 1px solid #f1f5f9; color: #334155; }
+          .input-style { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; background: #f8fafc; font-size: 14px; transition: border 0.2s; outline: none; }
+          .input-style:focus { border-color: #2563eb; background: #fff; }
+          .status-badge { color: #10b981; font-weight: 500; font-size: 13px; display: inline-flex; align-items: center; gap: 4px; }
+        `}</style>
+
+        {/* 대시보드 타이틀 헤더 */}
+        <header style={{ marginBottom: '32px' }}>
+          <h1 style={{ fontSize: '32px', fontWeight: '800', color: '#0f172a', letterSpacing: '-0.025em', margin: '0 0 6px 0' }}>QuickBooks Matcher</h1>
+          <p style={{ color: '#64748b', fontSize: '14px', margin: 0 }}>벤더 빌 매칭 및 단위 변환 자동 학습 시스템</p>
         </header>
 
-        {/* 메인 4단 탭 구조 */}
-        <Tabs defaultValue="tab1">
-          <TabsList>
-            <TabsTrigger value="tab1">1. 빌 매칭 검토</TabsTrigger>
-            <TabsTrigger value="tab2">2. 벤더 등록</TabsTrigger>
-            <TabsTrigger value="tab3">3. 벤더 명칭 관리</TabsTrigger>
-            <TabsTrigger value="tab4">4. 퀵북 아이템 관리</TabsTrigger>
-          </TabsList>
+        {/* 클로드 스타일 네비게이션 탭 바 */}
+        <div style={{ background: '#e2e8f0', padding: '6px', borderRadius: '12px', display: 'inline-flex', gap: '4px', marginBottom: '24px' }}>
+          <button onClick={() => setActiveTab('tab1')} className={`tab-btn ${activeTab === 'tab1' ? 'active' : ''}`}>1. 빌 매칭 검토</button>
+          <button onClick={() => setActiveTab('tab2')} className={`tab-btn ${activeTab === 'tab2' ? 'active' : ''}`}>2. 벤더 등록</button>
+          <button onClick={() => setActiveTab('tab3')} className={`tab-btn ${activeTab === 'tab3' ? 'active' : ''}`}>3. 벤더 명칭 관리</button>
+          <button onClick={() => setActiveTab('tab4')} className={`tab-btn ${activeTab === 'tab4' ? 'active' : ''}`}>4. 퀵북 아이템 관리</button>
+        </div>
 
+        {/* 메인 콘텐츠 카드 */}
+        <div className="app-card">
+          
           {/* TAB 1: 빌 매칭 검토 */}
-          <TabsContent value="tab1">
-            <section className="mb-8">
-              <h2 className="text-lg font-semibold text-slate-900 mb-3">벤더 빌 파일 업로드</h2>
-              <div className="border-2 border-dashed border-slate-200 bg-slate-50 hover:bg-slate-100 transition-colors rounded-xl p-8 text-center cursor-pointer relative">
-                <input type="file" onChange={handleFileUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" accept="image/*,.pdf" />
-                <div className="text-slate-600 font-medium">영수증, 벤더 빌 이미지 또는 PDF 파일을 여기에 드래그하거나 클릭하세요</div>
-                <div className="text-xs text-slate-400 mt-1">현재 시뮬레이션용 데이터 2건이 아래에 로드되어 있습니다.</div>
+          {activeTab === 'tab1' && (
+            <div>
+              <h2 style={{ fontSize: '18px', fontWeight: '700', color: '#0f172a', marginBottom: '14px' }}>벤더 빌 파일 업로드</h2>
+              <div className="upload-box">
+                <input type="file" onChange={handleFileUpload} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }} accept="image/*,.pdf" />
+                <div style={{ fontSize: '15px', fontWeight: '500', color: '#475569' }}>영수증, 벤더 빌 이미지 또는 PDF 파일을 여기에 드래그하거나 클릭하세요</div>
+                <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '6px' }}>현재 시뮬레이션용 데이터 2건이 아래에 로드되어 있습니다.</div>
               </div>
-            </section>
 
-            <section>
-              <h2 className="text-lg font-semibold text-slate-900 mb-1">추출 데이터 및 퀵북 매칭 검토</h2>
-              <p className="text-xs text-slate-400 mb-4">단위가 다를 경우 배수를 입력하여 퀵북 기준 수량으로 환산하세요.</p>
+              <h2 style={{ fontSize: '18px', fontWeight: '700', color: '#0f172a', marginTop: '40px', marginBottom: '4px' }}>추출 데이터 및 퀵북 매칭 검토</h2>
+              <p style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '20px' }}>단위가 다를 경우 배수를 입력하여 퀵북 기준 수량으로 환산하세요.</p>
               
-              <div className="overflow-x-auto border border-slate-100 rounded-xl">
-                <table className="w-full text-left border-collapse bg-white">
+              <div style={{ overflowX: 'auto', border: '1px solid #e2e8f0', borderRadius: '12px' }}>
+                <table className="table-style">
                   <thead>
-                    <tr className="bg-slate-50 border-b border-slate-100 text-xs font-semibold text-slate-500 uppercase">
-                      <th className="p-4">벤더 / 빌 품목명</th>
-                      <th className="p-4">빌 수량 / 단위</th>
-                      <th className="p-4">퀵북 아이템 매칭 (설명/코드)</th>
-                      <th className="p-4">단위 변환 배수</th>
-                      <th className="p-4">최종 퀵북 수량</th>
-                      <th className="p-4">상태 및 저장</th>
+                    <tr>
+                      <th>벤더 / 빌 품목명</th>
+                      <th>빌 수량 / 단위</th>
+                      <th>퀵북 아이템 매칭 (설명/코드)</th>
+                      <th style={{ width: '120px' }}>단위 변환 배수</th>
+                      <th>최종 퀵북 수량</th>
+                      <th>상태 및 저장</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 text-sm">
+                  <tbody>
                     {extractedItems.map((item) => (
-                      <tr key={item.id} className="hover:bg-slate-50/50 transition-colors">
-                        <td className="p-4 font-medium text-slate-900">{item.vendorItem}</td>
-                        <td className="p-4 text-slate-600">{item.quantity} {item.unit}</td>
-                        <td className="p-4">
+                      <tr key={item.id}>
+                        <td style={{ fontWeight: '600', color: '#1e293b' }}>{item.vendorItem}</td>
+                        <td style={{ color: '#475569' }}>{item.quantity} {item.unit}</td>
+                        <td>
                           <select value={item.matchedCode} onChange={(e) => {
                             const updated = extractedItems.map(i => i.id === item.id ? { ...i, matchedCode: e.target.value } : i);
                             setExtractedItems(updated);
-                          }} className="w-full bg-slate-50 border border-slate-200 text-slate-700 rounded-lg p-2 text-xs focus:outline-none focus:border-blue-500">
+                          }} style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px', width: '100%', background: '#f8fafc' }}>
                             <option value="">-- 퀵북 아이템 선택 --</option>
                             {qbItems.map(qb => (
                               <option key={qb.code} value={qb.code}>{qb.description} ({qb.code}) [{qb.unit}]</option>
                             ))}
                           </select>
                         </td>
-                        <td className="p-4">
-                          <div className="flex items-center space-x-1">
-                            <span className="text-slate-400 text-xs">x</span>
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span style={{ color: '#94a3b8', fontSize: '13px' }}>x</span>
                             <input type="number" value={item.multiplier} onChange={(e) => {
                               const updated = extractedItems.map(i => i.id === item.id ? { ...i, multiplier: Number(e.target.value) } : i);
                               setExtractedItems(updated);
-                            }} className="w-16 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg p-1.5 text-center text-xs focus:outline-none" />
+                            }} style={{ width: '60px', padding: '6px', textAlign: 'center', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px' }} />
                           </div>
                         </td>
-                        <td className="p-4 font-semibold text-slate-700">
+                        <td style={{ fontWeight: '700', color: '#334155' }}>
                           {item.quantity * item.multiplier} {qbItems.find(q => q.code === item.matchedCode)?.unit || item.unit}
                         </td>
-                        <td className="p-4">
+                        <td>
                           {item.status === '학습 완료' ? (
-                            <span className="text-emerald-600 font-medium text-xs flex items-center">✓ 학습 완료</span>
+                            <span className="status-badge">✓ 학습 완료</span>
                           ) : (
                             <button onClick={() => {
                               const updated = extractedItems.map(i => i.id === item.id ? { ...i, status: '학습 완료' } : i);
                               setExtractedItems(updated);
-                              alert("매칭 규칙이 시스템에 저장 및 매핑 학습되었습니다.");
-                            }} className="bg-blue-600 text-white hover:bg-blue-700 rounded-lg px-3 py-1.5 text-xs font-medium shadow-sm transition-colors">매칭 학습 저장</button>
+                              alert("매칭 규칙이 성공적으로 시스템에 저장 및 학습되었습니다.");
+                            }} className="btn-primary">매칭 학습 저장</button>
                           )}
                         </td>
                       </tr>
@@ -156,109 +146,123 @@ export default function Home() {
                   </tbody>
                 </table>
               </div>
-            </section>
-          </TabsContent>
+            </div>
+          )}
 
           {/* TAB 2: 벤더 등록 */}
-          <TabsContent value="tab2">
-            <div className="max-w-md">
-              <h2 className="text-lg font-semibold text-slate-900 mb-4">신규 신뢰 벤더 등록</h2>
-              <form onSubmit={addVendor} className="space-y-4">
+          {activeTab === 'tab2' && (
+            <div style={{ maxWidth: '460px' }}>
+              <h2 style={{ fontSize: '18px', fontWeight: '700', color: '#0f172a', marginBottom: '20px' }}>신규 신뢰 벤더 등록</h2>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1">벤더 정식 명칭</label>
-                  <input type="text" placeholder="예: 아산유통" value={newVendorName} onChange={(e) => setNewVendorName(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:border-blue-500" />
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#64748b', marginBottom: '6px' }}>벤더 정식 명칭</label>
+                  <input type="text" placeholder="예: 아산유통" value={newVendorName} onChange={(e) => setNewVendorName(e.target.value)} className="input-style" />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1">인식 대치 에일리어스 (쉼표 구분)</label>
-                  <input type="text" placeholder="예: 아산식품, (주)아산" value={newVendorAlias} onChange={(e) => setNewVendorAlias(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:border-blue-500" />
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#64748b', marginBottom: '6px' }}>인식 대치 에일리어스 (쉼표로 구분)</label>
+                  <input type="text" placeholder="예: 아산식품, (주)아산" value={newVendorAlias} onChange={(e) => setNewVendorAlias(e.target.value)} className="input-style" />
                 </div>
-                <button type="submit" className="w-full bg-slate-900 text-white hover:bg-slate-800 rounded-lg py-2.5 text-sm font-medium shadow-sm transition-colors">벤더 등록하기</button>
-              </form>
+                <button onClick={() => {
+                  if(!newVendorName) return;
+                  setVendors([...vendors, { id: Date.now(), name: newVendorName, alias: newVendorAlias }]);
+                  setNewVendorName(''); setNewVendorAlias('');
+                  alert("✅ 새로운 벤더가 정상 등록되었습니다.");
+                }} className="btn-dark" style={{ marginTop: '8px' }}>벤더 등록하기</button>
+              </div>
             </div>
-          </TabsContent>
+          )}
 
           {/* TAB 3: 벤더 명칭 관리 */}
-          <TabsContent value="tab3">
-            <h2 className="text-lg font-semibold text-slate-900 mb-4">벤더별 텍스트 별칭 (Alias) 매핑 리스트</h2>
-            <div className="overflow-x-auto border border-slate-100 rounded-xl">
-              <table className="w-full text-left border-collapse bg-white">
-                <thead>
-                  <tr className="bg-slate-50 border-b border-slate-100 text-xs font-semibold text-slate-500 uppercase">
-                    <th className="p-4">정식 벤더명</th>
-                    <th className="p-4">등록된 별칭들 (AI가 동일 회사로 인지하는 이름)</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 text-sm">
-                  {vendors.map((v) => (
-                    <tr key={v.id} className="hover:bg-slate-50/50">
-                      <td className="p-4 font-medium text-slate-900">{v.name}</td>
-                      <td className="p-4 text-slate-600">{v.alias}</td>
+          {activeTab === 'tab3' && (
+            <div>
+              <h2 style={{ fontSize: '18px', fontWeight: '700', color: '#0f172a', marginBottom: '16px' }}>벤더별 텍스트 별칭 (Alias) 매핑 리스트</h2>
+              <div style={{ overflowX: 'auto', border: '1px solid #e2e8f0', borderRadius: '12px' }}>
+                <table className="table-style">
+                  <thead>
+                    <tr>
+                      <th>정식 벤더명</th>
+                      <th>등록된 별칭들 (AI가 동일 회사로 동기화하는 명칭)</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {vendors.map((v) => (
+                      <tr key={v.id}>
+                        <td style={{ fontWeight: '600', color: '#0f172a' }}>{v.name}</td>
+                        <td style={{ color: '#475569' }}>{v.alias}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </TabsContent>
+          )}
 
           {/* TAB 4: 퀵북 아이템 관리 */}
-          <TabsContent value="tab4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <div className="md:col-span-1 space-y-6">
+          {activeTab === 'tab4' && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '40px' }}>
+              
+              {/* 왼쪽 입력 폼 */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                 <div>
-                  <h2 className="text-lg font-semibold text-slate-900 mb-3">직접 단건 추가</h2>
-                  <form onSubmit={addQbItem} className="space-y-3">
-                    <input type="text" placeholder="아이템 코드 (예: QB004)" value={newQbCode} onChange={(e) => setNewQbCode(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-sm focus:outline-none" />
-                    <input type="text" placeholder="아이템 설명(명칭)" value={newQbDesc} onChange={(e) => setNewQbDesc(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-sm focus:outline-none" />
-                    <select value={newQbUnit} onChange={(e) => setNewQbUnit(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-sm focus:outline-none">
+                  <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#0f172a', marginBottom: '14px' }}>직접 단건 추가</h3>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <input type="text" placeholder="아이템 코드 (예: QB006)" value={newQbCode} onChange={(e) => setNewQbCode(e.target.value)} className="input-style" />
+                    <input type="text" placeholder="아이템 설명(명칭)" value={newQbDesc} onChange={(e) => setNewQbDesc(e.target.value)} className="input-style" />
+                    <select value={newQbUnit} onChange={(e) => setNewQbUnit(e.target.value)} style={{ padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px', background: '#f8fafc' }}>
                       <option value="BOX">BOX</option>
                       <option value="BTL">BTL (병)</option>
                       <option value="PK">PK (팩)</option>
                       <option value="BAG">BAG (포대)</option>
                       <option value="CAN">CAN (캔)</option>
                     </select>
-                    <button type="submit" className="w-full bg-slate-900 text-white hover:bg-slate-800 rounded-lg py-2 text-xs font-medium transition-colors">아이템 추가</button>
-                  </form>
+                    <button onClick={() => {
+                      if(!newQbCode || !newQbDesc) return;
+                      setQbItems([...qbItems, { code: newQbCode, description: newQbDesc, unit: newQbUnit }]);
+                      setNewQbCode(''); setNewQbDesc('');
+                      alert("📦 퀵북 아이템이 마스터 목록에 추가되었습니다.");
+                    }} className="btn-dark">아이템 추가</button>
+                  </div>
                 </div>
-                
-                <hr className="border-slate-100" />
 
-                <div>
-                  <h2 className="text-lg font-semibold text-slate-900 mb-2">대량 엑셀 업로드 (.xlsx / .csv)</h2>
-                  <p className="text-xs text-slate-400 mb-3">퀵북에서 내보낸 아이템 리스트 파일로 일괄 등록합니다.</p>
-                  <div className="border-2 border-dashed border-slate-200 bg-slate-50 hover:bg-slate-100 rounded-lg p-4 text-center cursor-pointer relative text-xs text-slate-500">
-                    <input type="file" onChange={handleExcelUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" accept=".xlsx,.csv" />
-                    여기에 엑셀 파일을 드롭하세요
+                <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '20px' }}>
+                  <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#0f172a', marginBottom: '6px' }}>대량 엑셀 업로드 (.xlsx / .csv)</h3>
+                  <p style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '12px' }}>퀵북 아이템 리스트 파일을 드롭하여 일괄 등록합니다.</p>
+                  <div className="upload-box" style={{ padding: '24px 12px' }}>
+                    <input type="file" onChange={handleExcelUpload} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }} accept=".xlsx,.csv" />
+                    <span style={{ fontSize: '12px', color: '#64748b', fontWeight: '500' }}>📄 여기에 엑셀 파일을 드롭하세요</span>
                   </div>
                 </div>
               </div>
 
-              <div className="md:col-span-2">
-                <h2 className="text-lg font-semibold text-slate-900 mb-3">퀵북 마스터 아이템 목록 ({qbItems.length}건)</h2>
-                <div className="overflow-x-auto border border-slate-100 rounded-xl">
-                  <table className="w-full text-left border-collapse bg-white">
+              {/* 오른쪽 아이템 리스트 */}
+              <div>
+                <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#0f172a', marginBottom: '14px' }}>퀵북 마스터 아이템 목록 ({qbItems.length}건)</h3>
+                <div style={{ overflowX: 'auto', border: '1px solid #e2e8f0', borderRadius: '12px', maxHeight: '420px', overflowY: 'auto' }}>
+                  <table className="table-style">
                     <thead>
-                      <tr className="bg-slate-50 border-b border-slate-100 text-xs font-semibold text-slate-500">
-                        <th className="p-3">코드</th>
-                        <th className="p-3">아이템 설명</th>
-                        <th className="p-3">기준 단위</th>
+                      <tr>
+                        <th style={{ position: 'sticky', top: 0, background: '#f8fafc' }}>코드</th>
+                        <th style={{ position: 'sticky', top: 0, background: '#f8fafc' }}>아이템 설명</th>
+                        <th style={{ position: 'sticky', top: 0, background: '#f8fafc' }}>기준 단위</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100 text-xs text-slate-600">
-                      {qbItems.map((qb) => (
-                        <tr key={qb.code} className="hover:bg-slate-50/50">
-                          <td className="p-3 font-mono font-bold text-slate-900">{qb.code}</td>
-                          <td className="p-3">{qb.description}</td>
-                          <td className="p-3"><span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-[10px] font-semibold">{qb.unit}</span></td>
+                    <tbody>
+                      {qbItems.map((qb, index) => (
+                        <tr key={index}>
+                          <td style={{ fontFamily: 'monospace', fontWeight: '700', color: '#0f172a' }}>{qb.code}</td>
+                          <td>{qb.description}</td>
+                          <td><span style={{ background: '#eff6ff', color: '#1d4ed8', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: '700' }}>{qb.unit}</span></td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
               </div>
-            </div>
-          </TabsContent>
-        </Tabs>
 
+            </div>
+          )}
+
+        </div>
       </div>
     </div>
   );
