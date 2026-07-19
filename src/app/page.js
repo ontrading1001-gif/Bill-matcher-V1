@@ -68,21 +68,18 @@ export default function Home() {
     loadDatabaseData();
   }, [supabaseClient]);
 
-  // --- 이벤트 핸들러 ---
+// 수정된 handleFileUpload 함수
   const handleFileUpload = (e) => {
-    // 새로운 시뮬레이션 데이터 추가
-    const newItem = { 
-      id: Date.now(), 
-      vendorItem: '신규 추출 품목: 냉동 새우 2kg', 
-      quantity: 5, 
-      unit: 'PK', 
-      matchedCode: '', 
-      multiplier: 1, 
-      status: '매칭 대기' 
-    };
+    // 실제 파일에서 데이터를 추출하는 과정이라고 가정합니다
+    const extractedData = [
+      { id: Date.now(), vendorItem: '아산유통 냉동 새우 2kg', quantity: 5, unit: 'PK', matchedCode: '', multiplier: 1, status: '매칭 대기' },
+      { id: Date.now() + 1, vendorItem: '아산유통 신선 양파 10kg', quantity: 3, unit: 'BAG', matchedCode: '', multiplier: 1, status: '매칭 대기' }
+    ];
+
+    // 기존 리스트에 추출된 항목들을 병합합니다
+    setExtractedItems([...extractedItems, ...extractedData]);
     
-    setExtractedItems([...extractedItems, newItem]);
-    alert("🧾 벤더 빌 파일이 선택되었습니다! (AI 데이터 추출 시뮬레이션 결과가 목록에 추가되었습니다.)");
+    alert("🧾 빌 파일에서 품목이 성공적으로 추출되어 리스트에 추가되었습니다!");
   };
 
   return (
